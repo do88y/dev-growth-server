@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>DevGrowth Home</title>
+</head>
+<body>
+    <h1>Welcome to DevGrowth!</h1>
+    <p>Hello, <span th:text="${name}"></span>!</p>
+    <p>Email: <span th:text="${email}"></span></p>
+
+    <div th:if="${name == 'Guest'}">
+        <p><a href="/oauth2/authorization/github">Login with GitHub</a></p>
+    </div>
+    <div th:if="${name != 'Guest'}">
+        <p><a href="/logout">Logout</a></p>
+    </div>
+</body>
+</html>

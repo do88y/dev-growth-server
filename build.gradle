@@ -39,3 +39,11 @@ dependencies {
 tasks.named('test') {
 	useJUnitPlatform()
 }
+
+// 임시로 환경 변수 값을 출력하여 디버깅
+tasks.withType(JavaExec) {
+    doFirst {
+        println "Debugging GITHUB_CLIENT_ID: " + System.getenv("GITHUB_CLIENT_ID")
+        println "Debugging GITHUB_CLIENT_SECRET: " + System.getenv("GITHUB_CLIENT_SECRET")
+    }
+}

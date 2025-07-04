@@ -1,12 +1,24 @@
 spring:
-  h2:
-    console:
-      enabled: true
+  security:
+    oauth2:
+      client:
+        registration:
+          github:
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
+            redirect-uri: "{baseUrl}/oauth2/callback/{registrationId}"
+            scope: "read:user,user:email"
+  jpa:
+    hibernate:
+      ddl-auto: update
   datasource:
     url: jdbc:h2:mem:devgrowth
     driverClassName: org.h2.Driver
     username: sa
-    password: ''
-  jpa:
-    hibernate:
-      ddl-auto: update
+    password:
+server:
+  port: 8080
+
+h2:
+  console:
+    enabled: true
