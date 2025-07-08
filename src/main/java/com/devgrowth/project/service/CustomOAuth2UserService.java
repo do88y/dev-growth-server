@@ -39,6 +39,6 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     return userRepository.save(newUser);
                 });
 
-        return new CustomUserDetails(user, java.util.Collections.emptyMap());
+        return new CustomUserDetails(user, oAuth2User.getAttributes());
     }
 }
