@@ -32,12 +32,14 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         String githubId = oAuth2User.getAttribute("login");
         String nickname = oAuth2User.getAttribute("name");
-        String email = getPrimaryEmail(userRequest.getAccessToken().getTokenValue());
+        String accessToken = userRequest.getAccessToken().getTokenValue();
+        String email = getPrimaryEmail(accessToken);
 
         User user = userRepository.findByGithubId(githubId)
                 .map(existingUser -> {
                     existingUser.setNickname(nickname);
                     existingUser.setEmail(email);
+                    existingUser.setGithubToken(accessToken);
                     return userRepository.save(existingUser);
                 })
                 .orElseGet(() -> {
@@ -45,6 +47,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     newUser.setGithubId(githubId);
                     newUser.setEmail(email);
                     newUser.setNickname(nickname);
+                    newUser.setGithubToken(accessToken);
                     newUser.setCreatedAt(LocalDateTime.now());
                     return userRepository.save(newUser);
                 });
