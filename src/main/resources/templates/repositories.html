@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>My Repositories</title>
+</head>
+<body>
+    <h1>My Repositories</h1>
+    <p><a href="/">Back to Home</a></p>
+    <ul>
+        <li th:each="repo : ${repos}">
+            <span th:text="${repo.name}">Repo Name</span>
+            <span th:if="${repo.description != null and !repo.description.isEmpty()}">
+                - <span th:text="${repo.description}">Repo Description</span>
+            </span>
+        </li>
+    </ul>
+</body>
+</html>
