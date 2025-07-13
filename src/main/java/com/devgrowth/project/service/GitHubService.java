@@ -27,4 +27,19 @@ public class GitHubService {
                 .retrieve()
                 .body(new ParameterizedTypeReference<>() {});
     }
+
+    public List<Map<String, Object>> getCommits(User user, String owner, String repo) {
+        String accessToken = user.getGithubToken();
+        if (accessToken == null || accessToken.isBlank()) {
+            throw new IllegalStateException("User does not have a valid GitHub token.");
+        }
+
+        String url = String.format("https://api.github.com/repos/%s/%s/commits", owner, repo);
+
+        return restClient.get()
+                .uri(url)
+                .header("Authorization", "Bearer " + accessToken)
+                .retrieve()
+                .body(new ParameterizedTypeReference<>() {});
+    }
 }

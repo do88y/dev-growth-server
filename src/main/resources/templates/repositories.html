@@ -9,7 +9,9 @@
 <p><a href="/">Back to Home</a></p>
 <ul>
     <li th:each="repo : ${repos}">
-        <span th:text="${repo.name}">Repo Name</span>
+        <a th:href="@{/repositories/{owner}/{repo}/commits(owner=${repo.owner.login}, repo=${repo.name})}">
+            <span th:text="${repo.name}">Repo Name</span>
+        </a>
         <span th:if="${repo.description != null and !repo.description.isEmpty()}">
                 - <span th:text="${repo.description}">Repo Description</span>
             </span>

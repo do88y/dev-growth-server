@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Commits</title>
+</head>
+<body>
+<h1>Commits for <span th:text="${repoName}"></span></h1>
+
+<table>
+    <thead>
+    <tr>
+        <th>SHA</th>
+        <th>Author</th>
+        <th>Message</th>
+        <th>Date</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="commit : ${commits}">
+        <td><a th:href="${commit.html_url}" th:text="${#strings.substring(commit.sha, 0, 7)}" target="_blank"></a></td>
+        <td th:text="${commit.commit.author.name}"></td>
+        <td th:text="${commit.commit.message}"></td>
+        <td th:text="${commit.commit.author.date}"></td>
+    </tr>
+    </tbody>
+</table>
+
+<a href="/repositories">Back to Repositories</a>
+</body>
+</html>

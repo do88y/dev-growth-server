@@ -9,6 +9,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
@@ -67,5 +68,21 @@ public class RepositoryController {
         }
         trackedRepositoryService.removeTrackedRepository(userDetails.getUser(), repoName);
         return "redirect:/repositories";
+    }
+
+    @GetMapping("/repositories/{owner}/{repo}/commits")
+    public String getCommits(@AuthenticationPrincipal CustomUserDetails userDetails,
+                             @PathVariable String owner,
+                             @PathVariable String repo,
+                             Model model) {
+        if (userDetails == null) {
+            return "redirect:/";
+        }
+
+        List<Map<String, Object>> commits = gitHubService.getCommits(userDetails.getUser(), owner, repo);
+        model.addAttribute("commits", commits);
+        model.addAttribute("repoName", owner + "/" + repo);
+
+        return "commits";
     }
 }
