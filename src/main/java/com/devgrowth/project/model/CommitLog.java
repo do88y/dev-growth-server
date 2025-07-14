@@ -42,9 +42,17 @@ public class CommitLog {
     @Column(name = "diff_url")
     private String diffUrl;
 
+    @Lob
+    @Column(name = "code_diff")
+    private String codeDiff;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "evaluation_status")
     private EvaluationStatus evaluationStatus;
+
+    @Lob
+    @Column(name = "evaluation_result")
+    private String evaluationResult;
 
     public enum EvaluationStatus {
         PENDING, EVALUATED, SKIPPED
