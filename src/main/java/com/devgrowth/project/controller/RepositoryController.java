@@ -80,6 +80,7 @@ public class RepositoryController {
         }
 
         List<Map<String, Object>> commits = gitHubService.getCommits(userDetails.getUser(), owner, repo);
+        trackedRepositoryService.saveCommits(userDetails.getUser(), owner, repo, commits);
         model.addAttribute("commits", commits);
         model.addAttribute("repoName", owner + "/" + repo);
 

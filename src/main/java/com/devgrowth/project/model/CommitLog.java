@@ -30,6 +30,7 @@ public class CommitLog {
     @Column(name = "commit_date")
     private LocalDateTime commitDate;
 
+    @Column(length = 1000)
     private String message;
 
     @Column(name = "lines_added")
