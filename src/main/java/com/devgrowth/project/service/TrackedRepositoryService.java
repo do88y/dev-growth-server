@@ -64,6 +64,19 @@ public class TrackedRepositoryService {
                 commitLog.setLinesAdded((Integer) stats.get("additions"));
                 commitLog.setLinesDeleted((Integer) stats.get("deletions"));
                 commitLog.setDiffUrl((String) detailedCommit.get("html_url"));
+
+                // Extract code diff (patch) from files
+                List<Map<String, Object>> files = (List<Map<String, Object>>) detailedCommit.get("files");
+                StringBuilder codeDiffBuilder = new StringBuilder();
+                if (files != null) {
+                    for (Map<String, Object> file : files) {
+                        if (file.containsKey("patch")) {
+                            codeDiffBuilder.append(file.get("patch")).append("\n");
+                        }
+                    }
+                }
+                commitLog.setCodeDiff(codeDiffBuilder.toString());
+
                 commitLog.setEvaluationStatus(CommitLog.EvaluationStatus.PENDING);
 
                 commitLogRepository.save(commitLog);
