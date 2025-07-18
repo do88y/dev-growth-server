@@ -29,3 +29,7 @@ spring:
     driverClassName: org.h2.Driver
     username: sa
     password:
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
