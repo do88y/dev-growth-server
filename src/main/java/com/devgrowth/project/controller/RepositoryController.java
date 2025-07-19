@@ -4,6 +4,9 @@ import com.devgrowth.project.model.TrackedRepository;
 import com.devgrowth.project.security.CustomUserDetails;
 import com.devgrowth.project.service.GitHubService;
 import com.devgrowth.project.service.TrackedRepositoryService;
+import com.devgrowth.project.service.CommitEvaluationService;
+import com.devgrowth.project.repository.CommitLogRepository;
+import com.devgrowth.project.model.CommitLog;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -12,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
 import java.util.Map;
@@ -23,6 +27,8 @@ public class RepositoryController {
 
     private final GitHubService gitHubService;
     private final TrackedRepositoryService trackedRepositoryService;
+    private final CommitEvaluationService commitEvaluationService;
+    private final CommitLogRepository commitLogRepository;
 
     @GetMapping("/")
     public String home(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
@@ -79,11 +85,44 @@ public class RepositoryController {
             return "redirect:/";
         }
 
-        List<Map<String, Object>> commits = gitHubService.getCommits(userDetails.getUser(), owner, repo);
-        trackedRepositoryService.saveCommits(userDetails.getUser(), owner, repo, commits);
+        List<Map<String, Object>> githubCommits = gitHubService.getCommits(userDetails.getUser(), owner, repo);
+        trackedRepositoryService.saveCommits(userDetails.getUser(), owner, repo, githubCommits);
+
+        // Fetch commits from DB after saving
+        List<CommitLog> commits = commitLogRepository.findByUserAndRepoNameOrderByCommitDateDesc(userDetails.getUser(), owner + "/" + repo);
+
         model.addAttribute("commits", commits);
         model.addAttribute("repoName", owner + "/" + repo);
 
         return "commits";
+    }
+
+    @PostMapping("/commits/{commitId}/evaluate")
+    public String evaluateCommit(@AuthenticationPrincipal CustomUserDetails userDetails,
+                                 @PathVariable Long commitId,
+                                 RedirectAttributes redirectAttributes) {
+        if (userDetails == null) {
+            return "redirect:/";
+        }
+
+        return commitLogRepository.findById(commitId)
+                .map(commitLog -> {
+                    try {
+                        String evaluation = commitEvaluationService.evaluateCommit(commitLog);
+                        commitLog.setEvaluationResult(evaluation);
+                        commitLog.setEvaluationStatus(CommitLog.EvaluationStatus.EVALUATED);
+                        commitLogRepository.save(commitLog);
+                        redirectAttributes.addFlashAttribute("successMessage", "Commit evaluated successfully!");
+                    } catch (Exception e) {
+                        redirectAttributes.addFlashAttribute("errorMessage", "Error evaluating commit: " + e.getMessage());
+                    }
+                    // Redirect back to the commits page (need to reconstruct owner/repo from commitLog)
+                    String[] repoParts = commitLog.getRepoName().split("/");
+                    return "redirect:/repositories/" + repoParts[0] + "/" + repoParts[1] + "/commits";
+                })
+                .orElseGet(() -> {
+                    redirectAttributes.addFlashAttribute("errorMessage", "Commit not found.");
+                    return "redirect:/repositories";
+                });
     }
 }
