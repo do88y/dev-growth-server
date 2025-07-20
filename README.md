@@ -73,7 +73,9 @@ erDiagram
     INT lines_added
     INT lines_deleted
     VARCHAR diff_url
+    TEXT code_diff
     ENUM evaluation_status
+    TEXT evaluation_result
   }
 
   Evaluation {
