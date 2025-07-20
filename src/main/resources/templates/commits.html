@@ -42,7 +42,7 @@
     </tr>
     <tr th:each="commit : ${commits}" th:if="${commit.evaluationResult}">
         <td colspan="7">
-            <strong>AI Evaluation:</strong> <span th:text="${commit.evaluationResult}"></span>
+            <strong>AI Evaluation:</strong> <span style="white-space: pre-wrap;" th:text="${commit.evaluationResult}"></span>
         </td>
     </tr>
     </tbody>

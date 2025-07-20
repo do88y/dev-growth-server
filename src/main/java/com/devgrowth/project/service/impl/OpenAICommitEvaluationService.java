@@ -24,7 +24,7 @@ public class OpenAICommitEvaluationService implements CommitEvaluationService {
                         "Lines Added: %d\n" +
                         "Lines Deleted: %d\n" +
                         "Code Changes (diff):\n%s\n" +
-                        "Provide a brief, actionable feedback in Korean.",
+                        "Provide a brief, actionable feedback in Korean. Ensure the feedback is well-formatted with line breaks for readability.",
                 commitLog.getMessage(),
                 commitLog.getLinesAdded(),
                 commitLog.getLinesDeleted(),
