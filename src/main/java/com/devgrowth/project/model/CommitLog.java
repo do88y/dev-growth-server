@@ -50,6 +50,8 @@ public class CommitLog {
     @Column(name = "evaluation_status")
     private EvaluationStatus evaluationStatus;
 
+    private Float score;
+
     @Lob
     @Column(name = "evaluation_result")
     private String evaluationResult;

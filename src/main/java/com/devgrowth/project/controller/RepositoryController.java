@@ -1,5 +1,6 @@
 package com.devgrowth.project.controller;
 
+import com.devgrowth.project.dto.CommitEvaluationResponse;
 import com.devgrowth.project.model.TrackedRepository;
 import com.devgrowth.project.security.CustomUserDetails;
 import com.devgrowth.project.service.GitHubService;
@@ -108,8 +109,9 @@ public class RepositoryController {
         return commitLogRepository.findById(commitId)
                 .map(commitLog -> {
                     try {
-                        String evaluation = commitEvaluationService.evaluateCommit(commitLog);
-                        commitLog.setEvaluationResult(evaluation);
+                        CommitEvaluationResponse evaluationResponse = commitEvaluationService.evaluateCommit(commitLog);
+                        commitLog.setEvaluationResult(evaluationResponse.getFeedback());
+                        commitLog.setScore(evaluationResponse.getScore());
                         commitLog.setEvaluationStatus(CommitLog.EvaluationStatus.EVALUATED);
                         commitLogRepository.save(commitLog);
                         redirectAttributes.addFlashAttribute("successMessage", "Commit evaluated successfully!");

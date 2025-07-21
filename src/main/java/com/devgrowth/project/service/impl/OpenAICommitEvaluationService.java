@@ -1,5 +1,6 @@
 package com.devgrowth.project.service.impl;
 
+import com.devgrowth.project.dto.CommitEvaluationResponse;
 import com.devgrowth.project.model.CommitLog;
 import com.devgrowth.project.service.CommitEvaluationService;
 import org.springframework.ai.chat.client.ChatClient;
@@ -15,7 +16,7 @@ public class OpenAICommitEvaluationService implements CommitEvaluationService {
     }
 
     @Override
-    public String evaluateCommit(CommitLog commitLog) {
+    public CommitEvaluationResponse evaluateCommit(CommitLog commitLog) {
         String prompt = String.format(
                 "You are a code reviewer. Evaluate the following commit based on its message and code changes. " +
                         "Provide constructive feedback focusing on code quality, best practices, potential bugs, and maintainability. " +
@@ -24,7 +25,8 @@ public class OpenAICommitEvaluationService implements CommitEvaluationService {
                         "Lines Added: %d\n" +
                         "Lines Deleted: %d\n" +
                         "Code Changes (diff):\n%s\n" +
-                        "Provide a brief, actionable feedback in Korean. Ensure the feedback is well-formatted with line breaks for readability.",
+                        "Provide a brief, actionable feedback in Korean. Ensure the feedback is well-formatted with line breaks for readability. " +
+                        "Respond in JSON format with 'score' (float from 0.0 to 10.0) and 'feedback' (string) fields.",
                 commitLog.getMessage(),
                 commitLog.getLinesAdded(),
                 commitLog.getLinesDeleted(),
@@ -34,6 +36,6 @@ public class OpenAICommitEvaluationService implements CommitEvaluationService {
         return chatClient.prompt()
                 .user(prompt)
                 .call()
-                .content();
+                .entity(CommitEvaluationResponse.class);
     }
 }

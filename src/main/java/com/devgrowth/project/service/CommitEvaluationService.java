@@ -1,7 +1,8 @@
 package com.devgrowth.project.service;
 
+import com.devgrowth.project.dto.CommitEvaluationResponse;
 import com.devgrowth.project.model.CommitLog;
 
 public interface CommitEvaluationService {
-    String evaluateCommit(CommitLog commitLog);
+    CommitEvaluationResponse evaluateCommit(CommitLog commitLog);
 }
