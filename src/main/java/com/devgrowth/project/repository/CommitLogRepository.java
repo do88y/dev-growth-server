@@ -13,4 +13,5 @@ public interface CommitLogRepository extends JpaRepository<CommitLog, Long> {
     Optional<CommitLog> findByCommitHash(String commitHash);
     List<CommitLog> findByUserAndRepoNameOrderByCommitDateDesc(User user, String repoName);
     List<CommitLog> findByUserAndCommitDateBetween(User user, LocalDateTime startOfDay, LocalDateTime endOfDay);
+    List<CommitLog> findByUserAndCommitDateBetweenAndEvaluationStatus(User user, LocalDateTime startOfDay, LocalDateTime endOfDay, CommitLog.EvaluationStatus status);
 }

@@ -29,8 +29,15 @@ public class GrowthLogService {
                 date.atStartOfDay(), date.plusDays(1).atStartOfDay());
         int commitCount = dailyCommits.size();
 
-        // 2. 평균 AI 평가 점수 계산 (나중에 구현)
-        float avgScore = 0.0f; // TODO: Implement average score calculation
+        // 2. 평균 AI 평가 점수 계산
+        List<CommitLog> evaluatedCommits = commitLogRepository.findByUserAndCommitDateBetweenAndEvaluationStatus(user,
+                date.atStartOfDay(), date.plusDays(1).atStartOfDay(), CommitLog.EvaluationStatus.EVALUATED);
+
+        float avgScore = 0.0f;
+        if (!evaluatedCommits.isEmpty()) {
+            double sum = evaluatedCommits.stream().mapToDouble(CommitLog::getScore).sum();
+            avgScore = (float) (sum / evaluatedCommits.size());
+        }
 
         // 3. 연속 커밋 일수 계산
         int streakDay = calculateStreak(user, date);
