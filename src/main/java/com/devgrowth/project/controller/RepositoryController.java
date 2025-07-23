@@ -6,6 +6,7 @@ import com.devgrowth.project.security.CustomUserDetails;
 import com.devgrowth.project.service.GitHubService;
 import com.devgrowth.project.service.TrackedRepositoryService;
 import com.devgrowth.project.service.CommitEvaluationService;
+import com.devgrowth.project.service.GrowthLogService;
 import com.devgrowth.project.repository.CommitLogRepository;
 import com.devgrowth.project.model.CommitLog;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ public class RepositoryController {
     private final GitHubService gitHubService;
     private final TrackedRepositoryService trackedRepositoryService;
     private final CommitEvaluationService commitEvaluationService;
+    private final GrowthLogService growthLogService;
     private final CommitLogRepository commitLogRepository;
 
     @GetMapping("/")
@@ -114,6 +116,10 @@ public class RepositoryController {
                         commitLog.setScore(evaluationResponse.getScore());
                         commitLog.setEvaluationStatus(CommitLog.EvaluationStatus.EVALUATED);
                         commitLogRepository.save(commitLog);
+
+                        // Update GrowthLog for the commit date
+                        growthLogService.updateDailyGrowthLog(userDetails.getUser(), commitLog.getCommitDate().toLocalDate());
+
                         redirectAttributes.addFlashAttribute("successMessage", "Commit evaluated successfully!");
                     } catch (Exception e) {
                         redirectAttributes.addFlashAttribute("errorMessage", "Error evaluating commit: " + e.getMessage());
