@@ -74,4 +74,9 @@ public class GrowthLogService {
         }
         return streak;
     }
+
+    @Transactional(readOnly = true)
+    public List<GrowthLog> findGrowthLogs(User user, LocalDate startDate, LocalDate endDate) {
+        return growthLogRepository.findByUserAndDateBetweenOrderByDateDesc(user, startDate, endDate);
+    }
 }

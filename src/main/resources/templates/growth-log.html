@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Growth Log</title>
+</head>
+<body>
+<h1>Growth Log</h1>
+<p><a href="/">Back to Home</a></p>
+
+<table>
+    <thead>
+    <tr>
+        <th>Date</th>
+        <th>Commit Count</th>
+        <th>Average Score</th>
+        <th>Streak Day</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="log : ${growthLogs}">
+        <td th:text="${log.date}"></td>
+        <td th:text="${log.commitCount}"></td>
+        <td th:text="${log.avgScore}"></td>
+        <td th:text="${log.streakDay}"></td>
+    </tr>
+    </tbody>
+</table>
+
+</body>
+</html>
