@@ -1,53 +1,56 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Commits</title>
-</head>
-<body>
-<h1>Commits for <span th:text="${repoName}"></span></h1>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default_layout}">
 
-<div th:if="${successMessage}" style="color: green;">
-    <p th:text="${successMessage}"></p>
-</div>
-<div th:if="${errorMessage}" style="color: red;">
-    <p th:text="${errorMessage}"></p>
-</div>
+<th:block layout:fragment="content">
+    <h1>Commits for <span th:text="${repoName}"></span></h1>
 
-<table>
-    <thead>
-    <tr>
-        <th>SHA</th>
-        <th>Author</th>
-        <th>Message</th>
-        <th>Date</th>
-        <th>Lines Added</th>
-        <th>Lines Deleted</th>
-        <th>Actions</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="commit : ${commits}">
-        <td><a th:href="${commit.diffUrl}" th:text="${#strings.substring(commit.commitHash, 0, 7)}" target="_blank"></a></td>
-        <td th:text="${commit.user.nickname}"></td>
-        <td th:text="${commit.message}"></td>
-        <td th:text="${commit.commitDate}"></td>
-        <td th:text="${commit.linesAdded}"></td>
-        <td th:text="${commit.linesDeleted}"></td>
-        <td>
-            <form th:action="@{/commits/{commitId}/evaluate(commitId=${commit.id})}" method="post">
-                <button type="submit" th:disabled="${commit.evaluationStatus == T(com.devgrowth.project.model.CommitLog.EvaluationStatus).EVALUATED}">AI Evaluate</button>
-            </form>
-        </td>
-    </tr>
-    <tr th:each="commit : ${commits}" th:if="${commit.evaluationResult}">
-        <td colspan="7">
-            <strong>AI Evaluation:</strong> <span style="white-space: pre-wrap;" th:text="${commit.evaluationResult}"></span>
-        </td>
-    </tr>
-    </tbody>
-</table>
+    <div th:if="${successMessage}" class="alert alert-success" role="alert">
+        <p th:text="${successMessage}"></p>
+    </div>
+    <div th:if="${errorMessage}" class="alert alert-danger" role="alert">
+        <p th:text="${errorMessage}"></p>
+    </div>
 
-<a href="/repositories">Back to Repositories</a>
-</body>
+    <div class="accordion" id="commitAccordion">
+        <div class="accordion-item" th:each="commit, iterStat : ${commits}">
+            <h2 class="accordion-header" th:id="'heading' + ${iterStat.index}">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" th:data-bs-target="'#collapse' + ${iterStat.index}" aria-expanded="false" th:aria-controls="'collapse' + ${iterStat.index}">
+                    <span class="fw-bold me-2" th:text="${#strings.substring(commit.commitHash, 0, 7)}"></span>
+                    <span th:text="${commit.message.split('\n')[0]}"></span>
+                    <small class="text-muted ms-auto" th:text="${#temporals.format(commit.commitDate, 'yyyy-MM-dd HH:mm')}"></small>
+                </button>
+            </h2>
+            <div th:id="'collapse' + ${iterStat.index}" class="accordion-collapse collapse" th:aria-labelledby="'heading' + ${iterStat.index}" data-bs-parent="#commitAccordion">
+                <div class="accordion-body">
+                    <p><strong>Author:</strong> <span th:text="${commit.user.nickname}"></span></p>
+                    <p><strong>Full Message:</strong> <pre th:text="${commit.message}"></pre></p>
+                    <p>
+                        <span class="badge bg-success" th:text="'+' + ${commit.linesAdded}"></span>
+                        <span class="badge bg-danger" th:text="'-' + ${commit.linesDeleted}"></span>
+                    </p>
+                    <a th:href="${commit.diffUrl}" class="btn btn-secondary btn-sm" target="_blank">View on GitHub</a>
+
+                    <hr/>
+
+                    <h5>AI Evaluation</h5>
+                    <div th:if="${commit.evaluationStatus.name() == 'EVALUATED'}">
+                        <p><strong>Score:</strong> <span th:text="${commit.score}"></span> / 10.0</p>
+                        <div class="card">
+                            <div class="card-body">
+                                <p class="card-text" style="white-space: pre-wrap;" th:text="${commit.evaluationResult}"></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div th:if="${commit.evaluationStatus.name() != 'EVALUATED'}">
+                        <form th:action="@{/commits/{commitId}/evaluate(commitId=${commit.id})}" method="post">
+                            <button type="submit" class="btn btn-primary">Request AI Evaluation</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</th:block>
 </html>

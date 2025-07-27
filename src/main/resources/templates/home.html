@@ -1,21 +1,20 @@
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>DevGrowth Home</title>
-</head>
-<body>
-    <h1>Welcome to DevGrowth!</h1>
-    <p>Hello, <span th:text="${name}"></span>!</p>
-    <p>Email: <span th:text="${email}"></span></p>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default_layout}">
 
-    <div th:if="${name == 'Guest'}">
-        <p><a href="/oauth2/authorization/github">Login with GitHub</a></p>
+<th:block layout:fragment="content">
+    <div class="p-5 mb-4 bg-light rounded-3">
+        <div class="container-fluid py-5">
+            <h1 class="display-5 fw-bold">Welcome to DevGrowth!</h1>
+            <p class="col-md-8 fs-4">Your AI-powered personal developer learning support platform.</p>
+            <div th:if="${#authentication.principal == 'anonymousUser'}">
+                <a class="btn btn-primary btn-lg" href="/oauth2/authorization/github" role="button">Login with GitHub</a>
+            </div>
+            <div th:if="${#authentication.principal != 'anonymousUser'}">
+                <p>Hello, <span th:text="${#authentication.principal.attributes.name}"></span>!</p>
+            </div>
+        </div>
     </div>
-    <div th:if="${name != 'Guest'}">
-        <p><a href="/repositories">View My Repositories</a></p>
-        <p><a href="/growth-log">View My Growth Log</a></p>
-        <p><a href="/logout">Logout</a></p>
-    </div>
-</body>
+</th:block>
 </html>

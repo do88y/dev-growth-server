@@ -1,104 +1,110 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>Growth Log</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-</head>
-<body>
-<h1>Growth Log</h1>
-<p><a href="/">Back to Home</a></p>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/default_layout}">
 
-<div style="width: 80%; margin: auto;">
-    <canvas id="growthChart"></canvas>
-</div>
+<th:block layout:fragment="content">
+    <h1>Growth Log</h1>
+    <p>Visualize your coding activity over the last 30 days.</p>
 
-<hr/>
+    <div class="card mb-4">
+        <div class="card-header">
+            Growth Chart
+        </div>
+        <div class="card-body">
+            <div style="width: 100%; margin: auto;">
+                <canvas id="growthChart"></canvas>
+            </div>
+        </div>
+    </div>
 
-<h2>Raw Data</h2>
-<table>
-    <thead>
-    <tr>
-        <th>Date</th>
-        <th>Commit Count</th>
-        <th>Average Score</th>
-        <th>Streak Day</th>
-    </tr>
-    </thead>
-    <tbody>
-    <tr th:each="log : ${growthLogs}">
-        <td th:text="${log.date}"></td>
-        <td th:text="${log.commitCount}"></td>
-        <td th:text="${log.avgScore}"></td>
-        <td th:text="${log.streakDay}"></td>
-    </tr>
-    </tbody>
-</table>
+    <div class="card">
+        <div class="card-header">
+            Raw Data
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Commit Count</th>
+                    <th>Average Score</th>
+                    <th>Streak Day</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="log : ${growthLogs}">
+                    <td th:text="${log.date}"></td>
+                    <td th:text="${log.commitCount}"></td>
+                    <td th:text="${#numbers.formatDecimal(log.avgScore, 1, 2)}"></td>
+                    <td th:text="${log.streakDay}"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
 
-<script th:inline="javascript">
-    /*<![CDATA[*/
-    const labels = /*[[${labels}]]*/ [];
-    const commitCounts = /*[[${commitCounts}]]*/ [];
-    const avgScores = /*[[${avgScores}]]*/ [];
-    const streakDays = /*[[${streakDays}]]*/ [];
+    <script th:inline="javascript">
+        /*<![CDATA[*/
+        const labels = /*[[${labels}]]*/ [];
+        const commitCounts = /*[[${commitCounts}]]*/ [];
+        const avgScores = /*[[${avgScores}]]*/ [];
+        const streakDays = /*[[${streakDays}]]*/ [];
 
-    const ctx = document.getElementById('growthChart').getContext('2d');
-    const growthChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
-            datasets: [
-                {
-                    label: 'Commit Count',
-                    data: commitCounts,
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    yAxisID: 'y',
-                },
-                {
-                    label: 'Average Score',
-                    data: avgScores,
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    yAxisID: 'y1',
-                },
-                {
-                    label: 'Streak Day',
-                    data: streakDays,
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    yAxisID: 'y',
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            interaction: {
-                mode: 'index',
-                intersect: false,
-            },
-            stacked: false,
-            scales: {
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-
-                    // grid line settings
-                    grid: {
-                        drawOnChartArea: false, // only want the grid lines for one axis to show up
+        const ctx = document.getElementById('growthChart').getContext('2d');
+        const growthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Commit Count',
+                        data: commitCounts,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        yAxisID: 'y',
                     },
+                    {
+                        label: 'Average Score',
+                        data: avgScores,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        yAxisID: 'y1',
+                    },
+                    {
+                        label: 'Streak Day',
+                        data: streakDays,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        yAxisID: 'y',
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                interaction: {
+                    mode: 'index',
+                    intersect: false,
                 },
+                stacked: false,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        grid: {
+                            drawOnChartArea: false,
+                        },
+                    },
+                }
             }
-        }
-    });
-    /*]]>*/
-</script>
-
-</body>
+        });
+        /*]]>*/
+    </script>
+</th:block>
 </html>
