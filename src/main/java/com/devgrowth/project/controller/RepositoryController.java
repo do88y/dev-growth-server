@@ -46,7 +46,7 @@ public class RepositoryController {
         return "home";
     }
 
-    @GetMapping("/repositories")
+    @GetMapping("/user/repositories")
     public String repositories(@AuthenticationPrincipal CustomUserDetails userDetails, Model model) {
         if (userDetails == null) {
             return "redirect:/";
@@ -62,22 +62,22 @@ public class RepositoryController {
         return "repositories";
     }
 
-    @PostMapping("/repositories/add")
+    @PostMapping("/user/repositories/add")
     public String addRepository(@AuthenticationPrincipal CustomUserDetails userDetails, @RequestParam String repoName) {
         if (userDetails == null) {
             return "redirect:/";
         }
         trackedRepositoryService.addTrackedRepository(userDetails.getUser(), repoName);
-        return "redirect:/repositories";
+        return "redirect:/user/repositories";
     }
 
-    @PostMapping("/repositories/remove")
+    @PostMapping("/user/repositories/remove")
     public String removeRepository(@AuthenticationPrincipal CustomUserDetails userDetails, @RequestParam String repoName) {
         if (userDetails == null) {
             return "redirect:/";
         }
         trackedRepositoryService.removeTrackedRepository(userDetails.getUser(), repoName);
-        return "redirect:/repositories";
+        return "redirect:/user/repositories";
     }
 
     @GetMapping("/repositories/{owner}/{repo}/commits")
@@ -93,34 +93,16 @@ public class RepositoryController {
         List<Map<String, Object>> githubCommits = gitHubService.getCommits(userDetails.getUser(), owner, repo);
         trackedRepositoryService.saveCommits(userDetails.getUser(), owner, repo, githubCommits);
 
-        // DB에서 첫 페이지 커밋 조회
-        Pageable pageable = PageRequest.of(0, 20);
-        Page<CommitLog> commitPage = commitLogRepository.findByUserAndRepoNameOrderByCommitDateDesc(userDetails.getUser(), owner + "/" + repo, pageable);
+        // DB에서 모든 커밋 조회
+        List<CommitLog> commits = commitLogRepository.findByUserAndRepoNameOrderByCommitDateDesc(userDetails.getUser(), owner + "/" + repo);
 
-        model.addAttribute("commitPage", commitPage);
+        model.addAttribute("commits", commits);
         model.addAttribute("repoName", owner + "/" + repo);
         model.addAttribute("owner", owner);
         model.addAttribute("repo", repo);
 
         return "commits";
     }
-
-    @GetMapping("/api/repositories/{owner}/{repo}/commits")
-    @ResponseBody
-    public ResponseEntity<Page<CommitLog>> getCommitsApi(@AuthenticationPrincipal CustomUserDetails userDetails,
-                                                         @PathVariable String owner,
-                                                         @PathVariable String repo,
-                                                         @RequestParam(defaultValue = "0") int page) {
-        if (userDetails == null) {
-            return ResponseEntity.status(401).build();
-        }
-
-        Pageable pageable = PageRequest.of(page, 20);
-        Page<CommitLog> commitPage = commitLogRepository.findByUserAndRepoNameOrderByCommitDateDesc(userDetails.getUser(), owner + "/" + repo, pageable);
-
-        return ResponseEntity.ok(commitPage);
-    }
-
 
     @PostMapping("/commits/{commitId}/evaluate")
     public String evaluateCommit(@AuthenticationPrincipal CustomUserDetails userDetails,
@@ -152,7 +134,7 @@ public class RepositoryController {
                 })
                 .orElseGet(() -> {
                     redirectAttributes.addFlashAttribute("errorMessage", "Commit not found.");
-                    return "redirect:/repositories";
+                    return "redirect:/user/repositories";
                 });
     }
 }

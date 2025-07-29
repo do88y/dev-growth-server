@@ -16,11 +16,11 @@
                 <p class="mb-1" th:text="${repo.description}">Repo Description</p>
             </div>
             <div>
-                <form th:if="${trackedRepoNames.contains(repo.name)}" th:action="@{/repositories/remove}" method="post" style="display: inline;">
+                <form th:if="${trackedRepoNames.contains(repo.name)}" th:action="@{/user/repositories/remove}" method="post" style="display: inline;">
                     <input type="hidden" name="repoName" th:value="${repo.name}"/>
                     <button type="submit" class="btn btn-danger btn-sm">Remove</button>
                 </form>
-                <form th:unless="${trackedRepoNames.contains(repo.name)}" th:action="@{/repositories/add}" method="post" style="display: inline;">
+                <form th:unless="${trackedRepoNames.contains(repo.name)}" th:action="@{/user/repositories/add}" method="post" style="display: inline;">
                     <input type="hidden" name="repoName" th:value="${repo.name}"/>
                     <button type="submit" class="btn btn-success btn-sm">Add</button>
                 </form>
