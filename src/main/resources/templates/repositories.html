@@ -18,14 +18,22 @@
             <div>
                 <form th:if="${trackedRepoNames.contains(repo.name)}" th:action="@{/user/repositories/remove}" method="post" style="display: inline;">
                     <input type="hidden" name="repoName" th:value="${repo.name}"/>
-                    <button type="submit" class="btn btn-danger btn-sm">Remove</button>
+                    <button type="submit" class="btn btn-danger btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="이 리포지토리 추적을 중단합니다.">Untrack</button>
                 </form>
                 <form th:unless="${trackedRepoNames.contains(repo.name)}" th:action="@{/user/repositories/add}" method="post" style="display: inline;">
                     <input type="hidden" name="repoName" th:value="${repo.name}"/>
-                    <button type="submit" class="btn btn-success btn-sm">Add</button>
+                    <button type="submit" class="btn btn-success btn-sm" data-bs-toggle="tooltip" data-bs-placement="top" title="이 리포지토리를 추적 목록에 추가합니다.">Track</button>
                 </form>
             </div>
         </li>
     </ul>
 </th:block>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    });
+</script>
 </html>
