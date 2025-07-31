@@ -1,11 +1,9 @@
 package com.devgrowth.project.dto;
 
-import lombok.Getter;
-import lombok.Setter;
+import lombok.Value;
 
-@Getter
-@Setter
+@Value
 public class CommitEvaluationResponse {
-    private Float score;
-    private String feedback;
+    Float score;
+    String feedback;
 }

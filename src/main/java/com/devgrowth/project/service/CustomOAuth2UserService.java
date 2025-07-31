@@ -2,9 +2,10 @@
 package com.devgrowth.project.service;
 
 import com.devgrowth.project.model.User;
-import com.devgrowth.project.repository.UserRepository;
 import com.devgrowth.project.security.CustomUserDetails;
+import com.devgrowth.project.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.val;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -17,6 +18,7 @@ import org.springframework.web.client.RestClient;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -28,47 +30,45 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     @Override
     @Transactional
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
-        OAuth2User oAuth2User = super.loadUser(userRequest);
+        val oAuth2User = super.loadUser(userRequest);
 
-        String githubId = oAuth2User.getAttribute("login");
-        String nickname = oAuth2User.getAttribute("name");
-        String accessToken = userRequest.getAccessToken().getTokenValue();
-        String email = getPrimaryEmail(accessToken);
+        val githubId = oAuth2User.getAttribute("login");
+        val nickname = oAuth2User.getAttribute("name");
+        val accessToken = userRequest.getAccessToken().getTokenValue();
+        val email = getPrimaryEmail(accessToken);
 
-        User user = userRepository.findByGithubId(githubId)
+        val user = userRepository.findByGithubId(githubId)
                 .map(existingUser -> {
-                    existingUser.setNickname(nickname);
-                    existingUser.setEmail(email);
-                    existingUser.setGithubToken(accessToken);
+                    existingUser.updateProfile(nickname, email);
+                    existingUser.updateGithubToken(accessToken);
                     return userRepository.save(existingUser);
                 })
                 .orElseGet(() -> {
-                    User newUser = new User();
-                    newUser.setGithubId(githubId);
-                    newUser.setEmail(email);
-                    newUser.setNickname(nickname);
-                    newUser.setGithubToken(accessToken);
-                    newUser.setCreatedAt(LocalDateTime.now());
-                    return userRepository.save(newUser);
+                    return User.builder()
+                            .githubId(githubId)
+                            .email(email)
+                            .nickname(nickname)
+                            .githubToken(accessToken)
+                            .createdAt(LocalDateTime.now())
+                            .build();
                 });
 
         return new CustomUserDetails(user, oAuth2User.getAttributes());
     }
 
     private String getPrimaryEmail(String accessToken) {
-        List<Map<String, Object>> emails = restClient.get()
+        val emails = restClient.get()
                 .uri("https://api.github.com/user/emails")
                 .header("Authorization", "Bearer " + accessToken)
                 .retrieve()
-                .body(new ParameterizedTypeReference<>() {});
+                .body(new ParameterizedTypeReference<List<Map<String, Object>>>() {});
 
-        if (emails != null) {
-            return emails.stream()
-                    .filter(emailInfo -> (Boolean) emailInfo.get("primary"))
-                    .findFirst()
-                    .map(emailInfo -> (String) emailInfo.get("email"))
-                    .orElse(null);
-        }
-        return null;
+        return Optional.ofNullable(emails)
+                .orElseGet(List::of)
+                .stream()
+                .filter(emailInfo -> (Boolean) emailInfo.get("primary"))
+                .map(emailInfo -> (String) emailInfo.get("email"))
+                .findFirst()
+                .orElse(null);
     }
 }

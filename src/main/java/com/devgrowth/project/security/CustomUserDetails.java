@@ -1,7 +1,9 @@
 package com.devgrowth.project.security;
 
 import com.devgrowth.project.model.User;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.val;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -12,6 +14,7 @@ import java.util.Collections;
 import java.util.Map;
 
 @Getter
+@EqualsAndHashCode(exclude = "attributes")
 public class CustomUserDetails implements UserDetails, OAuth2User, Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -1,18 +1,19 @@
-# EditorConfig is awesome: https://EditorConfig.org
+# EditorConfig helps maintain consistent coding styles for multiple developers
+# working on the same project across various editors and IDEs.
+# editorconfig.org
 
-# top-most EditorConfig file
 root = true
 
 [*]
-charset = utf-8
 indent_style = space
 indent_size = 4
 end_of_line = lf
-insert_final_newline = true
+charset = utf-8
 trim_trailing_whitespace = true
+insert_final_newline = true
 
 [*.md]
 trim_trailing_whitespace = false
 
 [*.java]
-indent_size = 4
+ij_java_packages_to_use_import_on_demand = false

@@ -1,9 +1,19 @@
 
 package com.devgrowth.project.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -12,7 +22,10 @@ import java.time.LocalTime;
 @Entity
 @Table(name = "users")
 @Getter
-@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@ToString(exclude = "githubToken")
 public class User implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -50,5 +63,14 @@ public class User implements Serializable {
 
     public enum NotifyChannel {
         EMAIL, SMS
+    }
+
+    public void updateGithubToken(String githubToken) {
+        this.githubToken = githubToken;
+    }
+
+    public void updateProfile(String nickname, String email) {
+        this.nickname = nickname;
+        this.email = email;
     }
 }

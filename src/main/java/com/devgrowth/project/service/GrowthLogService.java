@@ -5,14 +5,13 @@ import com.devgrowth.project.model.GrowthLog;
 import com.devgrowth.project.model.User;
 import com.devgrowth.project.repository.CommitLogRepository;
 import com.devgrowth.project.repository.GrowthLogRepository;
-import com.devgrowth.project.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.val;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -21,58 +20,35 @@ public class GrowthLogService {
 
     private final GrowthLogRepository growthLogRepository;
     private final CommitLogRepository commitLogRepository;
-    private final UserRepository userRepository;
 
     public void updateDailyGrowthLog(User user, LocalDate date) {
-        // 1. 해당 날짜의 커밋 수 집계
-        List<CommitLog> dailyCommits = commitLogRepository.findByUserAndCommitDateBetween(user,
-                date.atStartOfDay(), date.plusDays(1).atStartOfDay());
-        int commitCount = dailyCommits.size();
+        val dailyCommits = commitLogRepository.findByUserAndCommitDateBetween(
+                user, date.atStartOfDay(), date.plusDays(1).atStartOfDay());
 
-        // 2. 평균 AI 평가 점수 계산
-        List<CommitLog> evaluatedCommits = commitLogRepository.findByUserAndCommitDateBetweenAndEvaluationStatus(user,
-                date.atStartOfDay(), date.plusDays(1).atStartOfDay(), CommitLog.EvaluationStatus.EVALUATED);
+        val avgScore = (float) dailyCommits.stream()
+                .filter(commit -> commit.getEvaluationStatus() == CommitLog.EvaluationStatus.EVALUATED && commit.getScore() != null)
+                .mapToDouble(CommitLog::getScore)
+                .average()
+                .orElse(0.0);
 
-        float avgScore = 0.0f;
-        if (!evaluatedCommits.isEmpty()) {
-            double sum = evaluatedCommits.stream().mapToDouble(CommitLog::getScore).sum();
-            avgScore = (float) (sum / evaluatedCommits.size());
-        }
+        val streakDay = calculateStreak(user, date, !dailyCommits.isEmpty());
 
-        // 3. 연속 커밋 일수 계산
-        int streakDay = calculateStreak(user, date);
+        val growthLog = growthLogRepository.findByUserAndDate(user, date)
+                .orElseGet(() -> GrowthLog.builder().user(user).date(date).build());
 
-        // 4. GrowthLog 업데이트 또는 생성
-        GrowthLog growthLog = growthLogRepository.findByUserIdAndDate(user.getId(), date)
-                .orElse(new GrowthLog());
-
-        growthLog.setUser(user);
-        growthLog.setDate(date);
-        growthLog.setCommitCount(commitCount);
+        growthLog.setCommitCount(dailyCommits.size());
         growthLog.setAvgScore(avgScore);
         growthLog.setStreakDay(streakDay);
 
         growthLogRepository.save(growthLog);
     }
 
-    private int calculateStreak(User user, LocalDate currentDate) {
-        int streak = 0;
-        LocalDate previousDate = currentDate.minusDays(1);
+    private int calculateStreak(User user, LocalDate currentDate, boolean hasCommitsToday) {
+        val yesterdayLog = growthLogRepository.findByUserAndDate(user, currentDate.minusDays(1));
 
-        Optional<GrowthLog> previousDayLog = growthLogRepository.findByUserIdAndDate(user.getId(), previousDate);
-
-        // If there was a commit yesterday, continue the streak
-        if (previousDayLog.isPresent() && previousDayLog.get().getCommitCount() > 0) {
-            streak = previousDayLog.get().getStreakDay() + 1;
-        } else {
-            // If no commit yesterday, check if there's a commit today to start a new streak
-            List<CommitLog> todayCommits = commitLogRepository.findByUserAndCommitDateBetween(user,
-                    currentDate.atStartOfDay(), currentDate.plusDays(1).atStartOfDay());
-            if (!todayCommits.isEmpty()) {
-                streak = 1;
-            }
-        }
-        return streak;
+        return yesterdayLog
+                .map(log -> log.getCommitCount() > 0 ? log.getStreakDay() + 1 : (hasCommitsToday ? 1 : 0))
+                .orElse(hasCommitsToday ? 1 : 0);
     }
 
     @Transactional(readOnly = true)
