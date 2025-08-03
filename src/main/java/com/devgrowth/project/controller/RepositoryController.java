@@ -10,14 +10,14 @@ import com.devgrowth.project.service.GitHubService;
 import com.devgrowth.project.service.GrowthLogService;
 import com.devgrowth.project.service.TrackedRepositoryService;
 import lombok.RequiredArgsConstructor;
-import lombok.val;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.List;
@@ -51,8 +51,8 @@ public class RepositoryController {
         if (userDetails == null) {
             return "redirect:/";
         }
-        val repos = gitHubService.getRepositories(userDetails.getUser());
-        val trackedRepoNames = trackedRepositoryService.findActiveTrackedRepositories(userDetails.getUser())
+        List<Map<String, Object>> repos = gitHubService.getRepositories(userDetails.getUser());
+        List<String> trackedRepoNames = trackedRepositoryService.findActiveTrackedRepositories(userDetails.getUser())
                 .stream()
                 .map(TrackedRepository::getRepoName)
                 .collect(Collectors.toList());
@@ -90,11 +90,11 @@ public class RepositoryController {
         }
 
         // 최신 커밋 동기화
-        val githubCommits = gitHubService.getCommits(userDetails.getUser(), owner, repo);
+        List<Map<String, Object>> githubCommits = gitHubService.getCommits(userDetails.getUser(), owner, repo);
         trackedRepositoryService.saveCommits(userDetails.getUser(), owner, repo, githubCommits);
 
         // DB에서 모든 커밋 조회
-        val commits = commitLogRepository.findByUserAndRepoNameOrderByCommitDateDesc(userDetails.getUser(), owner + "/" + repo);
+        List<CommitLog> commits = commitLogRepository.findByUserAndRepoNameOrderByCommitDateDesc(userDetails.getUser(), owner + "/" + repo);
 
         model.addAttribute("commits", commits);
         model.addAttribute("repoName", owner + "/" + repo);
@@ -115,8 +115,10 @@ public class RepositoryController {
         return commitLogRepository.findById(commitId)
                 .map(commitLog -> {
                     try {
-                        val evaluationResponse = commitEvaluationService.evaluateCommit(commitLog);
-                        commitLog.updateEvaluation(CommitLog.EvaluationStatus.EVALUATED, evaluationResponse.getScore(), evaluationResponse.getFeedback());
+                        CommitEvaluationResponse evaluationResponse = commitEvaluationService.evaluateCommit(commitLog);
+                        commitLog.setEvaluationResult(evaluationResponse.getFeedback());
+                        commitLog.setScore(evaluationResponse.getScore());
+                        commitLog.setEvaluationStatus(CommitLog.EvaluationStatus.EVALUATED);
                         commitLogRepository.save(commitLog);
 
                         // GrowthLog 업데이트
@@ -127,7 +129,7 @@ public class RepositoryController {
                         redirectAttributes.addFlashAttribute("errorMessage", "Error evaluating commit: " + e.getMessage());
                     }
                     // Redirect back to the commits page
-                    val repoParts = commitLog.getRepoName().split("/");
+                    String[] repoParts = commitLog.getRepoName().split("/");
                     return "redirect:/repositories/" + repoParts[0] + "/" + repoParts[1] + "/commits";
                 })
                 .orElseGet(() -> {

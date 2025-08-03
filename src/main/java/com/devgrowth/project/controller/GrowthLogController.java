@@ -4,7 +4,6 @@ import com.devgrowth.project.model.GrowthLog;
 import com.devgrowth.project.security.CustomUserDetails;
 import com.devgrowth.project.service.GrowthLogService;
 import lombok.RequiredArgsConstructor;
-import lombok.val;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -28,17 +27,17 @@ public class GrowthLogController {
         }
 
         // Fetch last 30 days of growth logs
-        val endDate = LocalDate.now();
-        val startDate = endDate.minusDays(30);
-        val growthLogs = growthLogService.findGrowthLogs(userDetails.getUser(), startDate, endDate);
+        LocalDate endDate = LocalDate.now();
+        LocalDate startDate = endDate.minusDays(30);
+        List<GrowthLog> growthLogs = growthLogService.findGrowthLogs(userDetails.getUser(), startDate, endDate);
 
         // Reverse the list to have dates in ascending order for the chart
         Collections.reverse(growthLogs);
 
-        val labels = growthLogs.stream().map(log -> log.getDate().toString()).collect(Collectors.toList());
-        val commitCounts = growthLogs.stream().map(GrowthLog::getCommitCount).collect(Collectors.toList());
-        val avgScores = growthLogs.stream().map(GrowthLog::getAvgScore).collect(Collectors.toList());
-        val streakDays = growthLogs.stream().map(GrowthLog::getStreakDay).collect(Collectors.toList());
+        List<String> labels = growthLogs.stream().map(log -> log.getDate().toString()).collect(Collectors.toList());
+        List<Integer> commitCounts = growthLogs.stream().map(GrowthLog::getCommitCount).collect(Collectors.toList());
+        List<Float> avgScores = growthLogs.stream().map(GrowthLog::getAvgScore).collect(Collectors.toList());
+        List<Integer> streakDays = growthLogs.stream().map(GrowthLog::getStreakDay).collect(Collectors.toList());
 
         model.addAttribute("growthLogs", growthLogs);
         model.addAttribute("labels", labels);

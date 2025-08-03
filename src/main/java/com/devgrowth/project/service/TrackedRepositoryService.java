@@ -6,7 +6,6 @@ import com.devgrowth.project.model.User;
 import com.devgrowth.project.repository.CommitLogRepository;
 import com.devgrowth.project.repository.TrackedRepositoryRepository;
 import lombok.RequiredArgsConstructor;
-import lombok.val;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -14,7 +13,6 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -26,23 +24,18 @@ public class TrackedRepositoryService {
     private final GitHubService gitHubService;
 
     public void addTrackedRepository(User user, String repoName) {
-        trackedRepositoryRepository.findByUserAndRepoName(user, repoName)
-                .ifPresentOrElse(
-                        TrackedRepository::activate,
-                        () -> {
-                            val newRepo = TrackedRepository.builder()
-                                    .user(user)
-                                    .repoName(repoName)
-                                    .isActive(true)
-                                    .build();
-                            trackedRepositoryRepository.save(newRepo);
-                        }
-                );
+        if (!trackedRepositoryRepository.existsByUserAndRepoName(user, repoName)) {
+            TrackedRepository newRepo = new TrackedRepository();
+            newRepo.setUser(user);
+            newRepo.setRepoName(repoName);
+            newRepo.setActive(true);
+            trackedRepositoryRepository.save(newRepo);
+        }
     }
 
     public void removeTrackedRepository(User user, String repoName) {
         trackedRepositoryRepository.findByUserAndRepoName(user, repoName)
-                .ifPresent(TrackedRepository::deactivate);
+                .ifPresent(trackedRepositoryRepository::delete);
     }
 
     @Transactional(readOnly = true)
@@ -51,35 +44,43 @@ public class TrackedRepositoryService {
     }
 
     public void saveCommits(User user, String owner, String repoName, List<Map<String, Object>> commits) {
-        commits.stream()
-                .map(commitData -> (String) commitData.get("sha"))
-                .filter(commitHash -> !commitLogRepository.existsByCommitHash(commitHash))
-                .forEach(commitHash -> {
-                    val detailedCommit = gitHubService.getCommitDetails(user, owner, repoName, commitHash);
-                    val commitInfo = (Map<String, Object>) detailedCommit.get("commit");
-                    val authorInfo = (Map<String, Object>) commitInfo.get("author");
-                    val stats = (Map<String, Object>) detailedCommit.get("stats");
-                    val files = (List<Map<String, Object>>) detailedCommit.get("files");
+        for (Map<String, Object> commitData : commits) {
+            String commitHash = (String) commitData.get("sha");
 
-                    val codeDiff = files.stream()
-                            .filter(file -> file.containsKey("patch"))
-                            .map(file -> (String) file.get("patch"))
-                            .collect(Collectors.joining("\n"));
+            // Check if commit already exists
+            if (commitLogRepository.findByCommitHash(commitHash).isEmpty()) {
+                // Fetch detailed commit information for lines added/deleted
+                Map<String, Object> detailedCommit = gitHubService.getCommitDetails(user, owner, repoName, commitHash);
+                Map<String, Object> commitInfo = (Map<String, Object>) detailedCommit.get("commit");
+                Map<String, Object> authorInfo = (Map<String, Object>) commitInfo.get("author");
+                Map<String, Object> stats = (Map<String, Object>) detailedCommit.get("stats");
 
-                    val commitLog = CommitLog.builder()
-                            .user(user)
-                            .repoName(owner + "/" + repoName)
-                            .commitHash(commitHash)
-                            .message((String) commitInfo.get("message"))
-                            .commitDate(LocalDateTime.parse((String) authorInfo.get("date"), DateTimeFormatter.ISO_DATE_TIME))
-                            .linesAdded((Integer) stats.get("additions"))
-                            .linesDeleted((Integer) stats.get("deletions"))
-                            .diffUrl((String) detailedCommit.get("html_url"))
-                            .codeDiff(codeDiff)
-                            .evaluationStatus(CommitLog.EvaluationStatus.PENDING)
-                            .build();
+                CommitLog commitLog = new CommitLog();
+                commitLog.setUser(user);
+                commitLog.setRepoName(owner + "/" + repoName);
+                commitLog.setCommitHash(commitHash);
+                commitLog.setMessage((String) commitInfo.get("message"));
+                commitLog.setCommitDate(LocalDateTime.parse((String) authorInfo.get("date"), DateTimeFormatter.ISO_DATE_TIME));
+                commitLog.setLinesAdded((Integer) stats.get("additions"));
+                commitLog.setLinesDeleted((Integer) stats.get("deletions"));
+                commitLog.setDiffUrl((String) detailedCommit.get("html_url"));
 
-                    commitLogRepository.save(commitLog);
-                });
+                // Extract code diff (patch) from files
+                List<Map<String, Object>> files = (List<Map<String, Object>>) detailedCommit.get("files");
+                StringBuilder codeDiffBuilder = new StringBuilder();
+                if (files != null) {
+                    for (Map<String, Object> file : files) {
+                        if (file.containsKey("patch")) {
+                            codeDiffBuilder.append(file.get("patch")).append("\n");
+                        }
+                    }
+                }
+                commitLog.setCodeDiff(codeDiffBuilder.toString());
+
+                commitLog.setEvaluationStatus(CommitLog.EvaluationStatus.PENDING);
+
+                commitLogRepository.save(commitLog);
+            }
+        }
     }
 }
