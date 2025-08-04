@@ -2,15 +2,20 @@
 package com.devgrowth.project.model;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "growth_log")
 @Getter
-@Setter
+@Builder(toBuilder = true)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class GrowthLog {
 
     @Id
@@ -34,4 +39,14 @@ public class GrowthLog {
 
     @Column(columnDefinition = "TEXT")
     private String reflection;
+
+    public void updateReflection(String reflection) {
+        this.reflection = reflection;
+    }
+
+    public void updateStats(int commitCount, float avgScore, int streakDay) {
+        this.commitCount = commitCount;
+        this.avgScore = avgScore;
+        this.streakDay = streakDay;
+    }
 }

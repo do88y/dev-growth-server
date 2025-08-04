@@ -2,8 +2,11 @@
 package com.devgrowth.project.model;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -12,7 +15,9 @@ import java.time.LocalTime;
 @Entity
 @Table(name = "users")
 @Getter
-@Setter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class User implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -50,5 +55,16 @@ public class User implements Serializable {
 
     public enum NotifyChannel {
         EMAIL, SMS
+    }
+
+    public void updateOAuthInfo(String nickname, String email, String githubToken) {
+        this.nickname = nickname;
+        this.email = email;
+        this.githubToken = githubToken;
+    }
+
+    public void updateNotificationSettings(LocalTime notifyTime, NotifyChannel notifyChannel) {
+        this.notifyTime = notifyTime;
+        this.notifyChannel = notifyChannel;
     }
 }

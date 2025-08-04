@@ -37,19 +37,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         User user = userRepository.findByGithubId(githubId)
                 .map(existingUser -> {
-                    existingUser.setNickname(nickname);
-                    existingUser.setEmail(email);
-                    existingUser.setGithubToken(accessToken);
+                    existingUser.updateOAuthInfo(nickname, email, accessToken);
                     return userRepository.save(existingUser);
                 })
                 .orElseGet(() -> {
-                    User newUser = new User();
-                    newUser.setGithubId(githubId);
-                    newUser.setEmail(email);
-                    newUser.setNickname(nickname);
-                    newUser.setGithubToken(accessToken);
-                    newUser.setCreatedAt(LocalDateTime.now());
-                    return userRepository.save(newUser);
+                    return userRepository.save(User.builder()
+                            .githubId(githubId)
+                            .email(email)
+                            .nickname(nickname)
+                            .githubToken(accessToken)
+                            .createdAt(LocalDateTime.now())
+                            .build());
                 });
 
         return new CustomUserDetails(user, oAuth2User.getAttributes());

@@ -2,15 +2,20 @@
 package com.devgrowth.project.model;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "commit_log")
 @Getter
-@Setter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class CommitLog {
 
     @Id
@@ -58,5 +63,11 @@ public class CommitLog {
 
     public enum EvaluationStatus {
         PENDING, EVALUATED, SKIPPED
+    }
+
+    public void updateEvaluation(EvaluationStatus status, Float score, String result) {
+        this.evaluationStatus = status;
+        this.score = score;
+        this.evaluationResult = result;
     }
 }

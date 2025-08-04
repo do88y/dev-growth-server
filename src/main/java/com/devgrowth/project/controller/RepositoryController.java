@@ -116,9 +116,7 @@ public class RepositoryController {
                 .map(commitLog -> {
                     try {
                         CommitEvaluationResponse evaluationResponse = commitEvaluationService.evaluateCommit(commitLog);
-                        commitLog.setEvaluationResult(evaluationResponse.getFeedback());
-                        commitLog.setScore(evaluationResponse.getScore());
-                        commitLog.setEvaluationStatus(CommitLog.EvaluationStatus.EVALUATED);
+                        commitLog.updateEvaluation(CommitLog.EvaluationStatus.EVALUATED, evaluationResponse.getScore(), evaluationResponse.getFeedback());
                         commitLogRepository.save(commitLog);
 
                         // GrowthLog 업데이트

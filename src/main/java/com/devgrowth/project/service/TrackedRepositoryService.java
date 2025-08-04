@@ -24,18 +24,23 @@ public class TrackedRepositoryService {
     private final GitHubService gitHubService;
 
     public void addTrackedRepository(User user, String repoName) {
-        if (!trackedRepositoryRepository.existsByUserAndRepoName(user, repoName)) {
-            TrackedRepository newRepo = new TrackedRepository();
-            newRepo.setUser(user);
-            newRepo.setRepoName(repoName);
-            newRepo.setActive(true);
-            trackedRepositoryRepository.save(newRepo);
-        }
+        trackedRepositoryRepository.findByUserAndRepoName(user, repoName)
+                .ifPresentOrElse(
+                        TrackedRepository::activate,
+                        () -> {
+                            TrackedRepository newRepo = TrackedRepository.builder()
+                                    .user(user)
+                                    .repoName(repoName)
+                                    .isActive(true)
+                                    .build();
+                            trackedRepositoryRepository.save(newRepo);
+                        }
+                );
     }
 
     public void removeTrackedRepository(User user, String repoName) {
         trackedRepositoryRepository.findByUserAndRepoName(user, repoName)
-                .ifPresent(trackedRepositoryRepository::delete);
+                .ifPresent(TrackedRepository::deactivate);
     }
 
     @Transactional(readOnly = true)
@@ -55,16 +60,6 @@ public class TrackedRepositoryService {
                 Map<String, Object> authorInfo = (Map<String, Object>) commitInfo.get("author");
                 Map<String, Object> stats = (Map<String, Object>) detailedCommit.get("stats");
 
-                CommitLog commitLog = new CommitLog();
-                commitLog.setUser(user);
-                commitLog.setRepoName(owner + "/" + repoName);
-                commitLog.setCommitHash(commitHash);
-                commitLog.setMessage((String) commitInfo.get("message"));
-                commitLog.setCommitDate(LocalDateTime.parse((String) authorInfo.get("date"), DateTimeFormatter.ISO_DATE_TIME));
-                commitLog.setLinesAdded((Integer) stats.get("additions"));
-                commitLog.setLinesDeleted((Integer) stats.get("deletions"));
-                commitLog.setDiffUrl((String) detailedCommit.get("html_url"));
-
                 // Extract code diff (patch) from files
                 List<Map<String, Object>> files = (List<Map<String, Object>>) detailedCommit.get("files");
                 StringBuilder codeDiffBuilder = new StringBuilder();
@@ -75,9 +70,19 @@ public class TrackedRepositoryService {
                         }
                     }
                 }
-                commitLog.setCodeDiff(codeDiffBuilder.toString());
 
-                commitLog.setEvaluationStatus(CommitLog.EvaluationStatus.PENDING);
+                CommitLog commitLog = CommitLog.builder()
+                        .user(user)
+                        .repoName(owner + "/" + repoName)
+                        .commitHash(commitHash)
+                        .message((String) commitInfo.get("message"))
+                        .commitDate(LocalDateTime.parse((String) authorInfo.get("date"), DateTimeFormatter.ISO_DATE_TIME))
+                        .linesAdded((Integer) stats.get("additions"))
+                        .linesDeleted((Integer) stats.get("deletions"))
+                        .diffUrl((String) detailedCommit.get("html_url"))
+                        .codeDiff(codeDiffBuilder.toString())
+                        .evaluationStatus(CommitLog.EvaluationStatus.PENDING)
+                        .build();
 
                 commitLogRepository.save(commitLog);
             }

@@ -30,49 +30,30 @@ public class GrowthLogService {
         int commitCount = dailyCommits.size();
 
         // 2. 평균 AI 평가 점수 계산
-        List<CommitLog> evaluatedCommits = commitLogRepository.findByUserAndCommitDateBetweenAndEvaluationStatus(user,
-                date.atStartOfDay(), date.plusDays(1).atStartOfDay(), CommitLog.EvaluationStatus.EVALUATED);
-
-        float avgScore = 0.0f;
-        if (!evaluatedCommits.isEmpty()) {
-            double sum = evaluatedCommits.stream().mapToDouble(CommitLog::getScore).sum();
-            avgScore = (float) (sum / evaluatedCommits.size());
-        }
+        float avgScore = (float) dailyCommits.stream()
+                .filter(commit -> commit.getEvaluationStatus() == CommitLog.EvaluationStatus.EVALUATED && commit.getScore() != null)
+                .mapToDouble(CommitLog::getScore)
+                .average()
+                .orElse(0.0);
 
         // 3. 연속 커밋 일수 계산
-        int streakDay = calculateStreak(user, date);
+        int streakDay = calculateStreak(user, date, !dailyCommits.isEmpty());
 
         // 4. GrowthLog 업데이트 또는 생성
-        GrowthLog growthLog = growthLogRepository.findByUserIdAndDate(user.getId(), date)
-                .orElse(new GrowthLog());
+        GrowthLog growthLog = growthLogRepository.findByUserAndDate(user, date)
+                .orElseGet(() -> GrowthLog.builder().user(user).date(date).build());
 
-        growthLog.setUser(user);
-        growthLog.setDate(date);
-        growthLog.setCommitCount(commitCount);
-        growthLog.setAvgScore(avgScore);
-        growthLog.setStreakDay(streakDay);
+        growthLog.updateStats(commitCount, avgScore, streakDay);
 
         growthLogRepository.save(growthLog);
     }
 
-    private int calculateStreak(User user, LocalDate currentDate) {
-        int streak = 0;
-        LocalDate previousDate = currentDate.minusDays(1);
+    private int calculateStreak(User user, LocalDate currentDate, boolean hasCommitsToday) {
+        Optional<GrowthLog> yesterdayLog = growthLogRepository.findByUserAndDate(user, currentDate.minusDays(1));
 
-        Optional<GrowthLog> previousDayLog = growthLogRepository.findByUserIdAndDate(user.getId(), previousDate);
-
-        // If there was a commit yesterday, continue the streak
-        if (previousDayLog.isPresent() && previousDayLog.get().getCommitCount() > 0) {
-            streak = previousDayLog.get().getStreakDay() + 1;
-        } else {
-            // If no commit yesterday, check if there's a commit today to start a new streak
-            List<CommitLog> todayCommits = commitLogRepository.findByUserAndCommitDateBetween(user,
-                    currentDate.atStartOfDay(), currentDate.plusDays(1).atStartOfDay());
-            if (!todayCommits.isEmpty()) {
-                streak = 1;
-            }
-        }
-        return streak;
+        return yesterdayLog
+                .map(log -> log.getCommitCount() > 0 ? log.getStreakDay() + 1 : (hasCommitsToday ? 1 : 0))
+                .orElse(hasCommitsToday ? 1 : 0);
     }
 
     @Transactional(readOnly = true)
